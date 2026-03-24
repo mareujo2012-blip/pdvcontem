@@ -461,4 +461,30 @@ if($action==='export_data'){
     out(['exported_at'=>date('c'),'products'=>$products,'closings'=>$closings,'config'=>$cfg,'audit_log'=>$audit]);
 }
 
+if($action==='seed_data'){
+    if(!is_master())err('Sem permissao',403);
+    $beb_s=$pdo->query("SELECT * FROM products WHERE active=1 AND category='bebida'")->fetchAll();
+    $com_s=$pdo->query("SELECT * FROM products WHERE active=1 AND category='comida'")->fetchAll();
+    if(!$beb_s) $beb_s=[['name'=>'Cerveja Teste Seed','price'=>12.90,'category'=>'bebida']];
+    if(!$com_s) $com_s=[['name'=>'Porcao Teste Seed','price'=>35.50,'category'=>'comida']];
+    for($m=1;$m<=10;$m++){
+        $cnt=rand(3,6);
+        for($i=0;$i<$cnt;$i++){
+            $catv=rand(0,1);
+            $p=$catv==0?$beb_s[array_rand($beb_s)]:$com_s[array_rand($com_s)];
+            $id=gen_id();
+            $pdo->prepare("INSERT INTO orders(id,mesa_id,product_name,price,category,qty,created_by) VALUES(?,?,?,?,?,?,?)")->execute([$id,(string)$m,$p['name'],$p['price'],$p['category'],rand(1,3),'seed']);
+        }
+    }
+    add_audit($pdo,'Massa de dados de teste (Seed) gerada nas mesas 1 a 10.','master');
+    out(['ok'=>true]);
+}
+
+if($action==='clear_seed'){
+    if(!is_master())err('Sem permissao',403);
+    $pdo->exec("DELETE FROM orders WHERE created_by='seed'");
+    add_audit($pdo,'Massa de dados de teste (Seed) removida.','master');
+    out(['ok'=>true]);
+}
+
 err("Acao desconhecida.",404);

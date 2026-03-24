@@ -1406,6 +1406,10 @@ async function loadSecurity(){
     </div></div>
     <div class="cfg-section" style="margin:0"><div class="cfg-sec-title">&#128203; Auditoria</div><div style="padding:9px 14px">
       ${audit.length===0?`<div style="color:var(--mu);font-size:12px">Nenhuma atividade.</div>`:audit.slice(0,80).map(e=>`<div class="alog-row"><div class="alog-ts">${e.ts}</div><div style="flex:1;font-size:12px">${e.msg}<span class="abadge abadge-${e.role==='master'?'m':e.role==='dono'?'d':'p'}">${e.role}</span></div></div>`).join('')}
+    </div></div>
+    <div class="cfg-section" style="margin:10px 0 0; border-color:var(--am)"><div class="cfg-sec-title" style="color:var(--am)">&#128736; Ferramentas de Teste (Seed)</div><div style="padding:15px">
+      <div style="font-size:12px;color:var(--mu);margin-bottom:12px;line-height:1.4">Utilize estas opções para popular ou limpar o sistema. A ação de criar <b>Seed</b> agendará inúmeros pedidos pelas mesas 1 a 10 usando itens do próprio cardápio.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-am btn-sm" onclick="runSeed()">⬡ Gerar Dados de Teste</button> <button class="btn btn-rd btn-sm" onclick="clearSeed()">✕ Deletar Apenas Testes</button></div>
     </div></div>`;
   }catch(e){area.innerHTML=`<div class="rpt-empty">Erro: ${e.message}</div>`;}
 }
@@ -1414,6 +1418,8 @@ async function submitMR(){const nw=document.getElementById('mr-new').value,conf=
 async function blockIPManual(){const ip=document.getElementById('bi-ip').value.trim(),reason=document.getElementById('bi-re').value.trim(),hours=parseInt(document.getElementById('bi-hr').value);if(!ip){showToast('Digite um IP','e');return;}try{await api('block_ip',{ip,reason,hours});loadSecurity();showToast('IP bloqueado ✓','s');}catch(e){showToast(e.message,'e');}}
 async function blockIP(ip){const reason=prompt('Motivo:','')||'Tentativas excessivas';try{await api('block_ip',{ip,reason,hours:24});loadSecurity();showToast('IP bloqueado 24h ✓','s');}catch(e){showToast(e.message,'e');}}
 async function unblockIP(ip){if(!confirm(`Desbloquear ${ip}?`))return;try{await api('unblock_ip',{ip});loadSecurity();showToast('Desbloqueado ✓','s');}catch(e){showToast(e.message,'e');}}
+async function runSeed(){if(!confirm('Criar massa de dados fictícios em 10 mesas diferentes?'))return;try{await api('seed_data');showToast('Aplicativo populado (Seed) ✓','s');loadSecurity();if(S.tab==='pdv')refreshOrders();}catch(e){showToast(e.message,'e');}}
+async function clearSeed(){if(!confirm('Excluir TODOS os pedidos de teste (Seed) abertos?'))return;try{await api('clear_seed');showToast('Pedidos de teste apagados ✓','s');loadSecurity();if(S.tab==='pdv')refreshOrders();}catch(e){showToast(e.message,'e');}}
 
 // ── CONFIG ───────────────────────────────────────────────────
 async function saveCfg(){
