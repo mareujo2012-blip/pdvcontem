@@ -441,12 +441,19 @@ if($action==='upload_logo'){
     clear_attempts($pdo,'upload_logo');out(['ok'=>true,'url'=>$url]);
 }
 if($action==='clear_closings'){
-    if(!is_master())err('Sem permissao',403);$cnt=$pdo->query('SELECT COUNT(*) as cnt FROM closings')->fetch()['cnt'];
-    $pdo->exec('TRUNCATE TABLE closings');add_audit($pdo,"Fechamentos ativos excluidos ($cnt registros)",'master');out(['ok'=>true]);
+    if(!is_master())err('Sem permissao',403);
+    $pass=$body['pass']??'';$s=$pdo->prepare("SELECT password_hash FROM users WHERE role='master'");$s->execute();$hash=$s->fetchColumn();
+    if(!$hash||!password_verify($pass,$hash))err('Senha Master incorreta',403);
+    $cnt=$pdo->query('SELECT COUNT(*) as cnt FROM closings')->fetch()['cnt'];
+    $pdo->exec('DELETE FROM closings');add_audit($pdo,"Fechamentos ativos excluidos ($cnt registros)",'master');out(['ok'=>true]);
 }
 if($action==='purge_archive'){
     if(!is_master())err('Sem permissao',403);$all=(bool)($body['all']??false);
-    if($all){$cnt=$pdo->query('SELECT COUNT(*) as cnt FROM closings_archive')->fetch()['cnt'];$pdo->exec('DELETE FROM closings_archive');add_audit($pdo,"Todo arquivo historico excluido ($cnt registros)",'master');}
+    if($all){
+        $pass=$body['pass']??'';$s=$pdo->prepare("SELECT password_hash FROM users WHERE role='master'");$s->execute();$hash=$s->fetchColumn();
+        if(!$hash||!password_verify($pass,$hash))err('Senha Master incorreta',403);
+        $cnt=$pdo->query('SELECT COUNT(*) as cnt FROM closings_archive')->fetch()['cnt'];$pdo->exec('DELETE FROM closings_archive');add_audit($pdo,"Todo arquivo historico excluido ($cnt registros)",'master');
+    }
     else{$bid=trim($body['id']??'');if(!preg_match('/^[a-f0-9]{32}$/',$bid))err('ID invalido');$cnt=$pdo->prepare('SELECT COUNT(*) as cnt FROM closings_archive WHERE backup_id=?');$cnt->execute([$bid]);$cnt=$cnt->fetch()['cnt'];$pdo->prepare('DELETE FROM closings_archive WHERE backup_id=?')->execute([$bid]);add_audit($pdo,"Dados historicos do backup $bid excluidos ($cnt registros)",'master');}
     out(['ok'=>true]);
 }
