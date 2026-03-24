@@ -20,7 +20,7 @@ function is_master(){return($_SESSION['role']??'')==='master';}
 function is_dono(){return in_array($_SESSION['role']??'',['dono','master']);}
 function gen_id(){return bin2hex(random_bytes(16));}
 function get_ip():string{
-    foreach(['HTTP_CF_CONNECTING_IP','HTTP_X_REAL_IP','HTTP_X_FORWARDED_FOR','REMOTE_ADDR'] as $k){
+    foreach(['HTTP_CF_CONNECTING_IP','REMOTE_ADDR'] as $k){
         $v=trim(explode(',',$_SERVER[$k]??'')[0]);
         if(filter_var($v,FILTER_VALIDATE_IP))return $v;
     } return '0.0.0.0';
@@ -70,6 +70,11 @@ function check_brute_action(PDO $pdo,string $action,int $max=10,int $window=10):
     $s=$pdo->prepare("SELECT COUNT(*) as cnt FROM login_attempts WHERE ip_address=? AND role_tried=? AND attempted_at>=?");
     $s->execute([$ip,$action,$win]);$r=$s->fetch();
     if($r['cnt']>=$max)err("Muitas tentativas para '$action'. Aguarde alguns minutos.",429);
+}
+function enforce_rate_limit(string $key, float $seconds=0.5):void{
+    $now=microtime(true);$last=$_SESSION['last_'.$key]??0;
+    if(($now-$last)<$seconds)err('Fluxo muito rapido. Aguarde um instante (Rate Limit).',429);
+    $_SESSION['last_'.$key]=$now;
 }
 
 // ── BACKUP ────────────────────────────────────────────────────
@@ -221,6 +226,7 @@ if($action==='get_orders'){$mesa=trim($_GET['mesa']??'');if($mesa==='')err('Mesa
 if($action==='get_all_open_orders'){$rows=$pdo->query("SELECT * FROM orders WHERE status='open' ORDER BY mesa_id,created_at")->fetchAll();$r=[];foreach($rows as $o)$r[$o['mesa_id']][]=$o;out($r);}
 
 if($action==='add_order'){
+    enforce_rate_limit('write',0.5);
     $mesa_id=trim($body['mesa_id']??'');$name=trim(htmlspecialchars($body['product_name']??'',ENT_QUOTES,'UTF-8'));$price=round((float)($body['price']??-1),2);$cat=$body['category']??'';
     if($mesa_id===''||$name===''||strlen($name)>100||$price<0||$price>99999)err('Dados invalidos');
     if(!in_array($cat,['bebida','comida']))err('Categoria invalida');
@@ -232,6 +238,7 @@ if($action==='add_order'){
 }
 
 if($action==='update_order'){
+    enforce_rate_limit('write',0.5);
     $id=$body['id']??'';$qty=(int)($body['qty']??0);if(!$id)err('ID obrigatorio');
     $s=$pdo->prepare("SELECT created_by,category,mesa_id FROM orders WHERE id=? AND status='open'");$s->execute([$id]);$order=$s->fetch();
     if(!$order)err('Pedido nao encontrado',404);
@@ -243,11 +250,13 @@ if($action==='update_order'){
 }
 
 if($action==='cancel_mesa'){
+    enforce_rate_limit('write',0.5);
     if(!is_dono())err('Sem permissao',403);$mesa=trim($body['mesa_id']??'');if($mesa==='')err('Mesa invalida');
     $pdo->prepare("DELETE FROM orders WHERE mesa_id=? AND status='open'")->execute([$mesa]);add_audit($pdo,"$mesa: pedidos cancelados");out(['ok'=>true]);
 }
 
 if($action==='close_mesa'){
+    enforce_rate_limit('write',0.5);
     if(!is_dono())err('Sem permissao',403);
     $mesa_id=trim($body['mesa_id']??'');$comm_rate=round((float)($body['commission_rate']??15),2);
     if($mesa_id==='')err('Mesa invalida');if($comm_rate<0||$comm_rate>100)err('Comissao invalida');
@@ -269,6 +278,7 @@ if($action==='get_report'){
     $start=$_GET['start']??date('Y-m-d');$end=$_GET['end']??date('Y-m-d');
     if(!preg_match('/^\d{4}-\d{2}-\d{2}$/',$start)||!preg_match('/^\d{4}-\d{2}-\d{2}$/',$end))err('Data invalida');
     if($start>$end)[$start,$end]=[$end,$start];
+    if((strtotime($end)-strtotime($start))>366*86400)err('Intervalo maximo permitido para pesquisa e de 366 dias.',400);
     // UNION closings + closings_archive para que dados arquivados apareçam normalmente
     $rows=fetch_closings_range($pdo,$start,$end);
     out($rows);
@@ -281,6 +291,7 @@ if($action==='get_master_report'){
     $filter=$_GET['filter']??'all'; // all | distribuidora | parceiro | comissao
     if(!preg_match('/^\d{4}-\d{2}-\d{2}$/',$start)||!preg_match('/^\d{4}-\d{2}-\d{2}$/',$end))err('Data invalida');
     if($start>$end)[$start,$end]=[$end,$start];
+    if((strtotime($end)-strtotime($start))>366*86400)err('Intervalo maximo permitido para pesquisa e de 366 dias.',400);
 
     $rows=fetch_closings_range($pdo,$start,$end);
 
