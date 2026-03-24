@@ -225,6 +225,7 @@ if($action==='add_order'){
     if($mesa_id===''||$name===''||strlen($name)>100||$price<0||$price>99999)err('Dados invalidos');
     if(!in_array($cat,['bebida','comida']))err('Categoria invalida');
     if($_SESSION['role']==='parceiro'&&$cat!=='comida')err('Parceiro so pode lancar comida',403);
+    if($_SESSION['role']==='dono'&&$cat!=='bebida')err('Distribuidora so pode lancar bebida',403);
     $s=$pdo->prepare("SELECT id,qty FROM orders WHERE mesa_id=? AND product_name=? AND category=? AND status='open'");$s->execute([$mesa_id,$name,$cat]);$ex=$s->fetch();
     if($ex){$pdo->prepare('UPDATE orders SET qty=qty+1 WHERE id=?')->execute([$ex['id']]);out(['ok'=>true,'id'=>$ex['id']]);}
     else{$nid=gen_id();$pdo->prepare('INSERT INTO orders(id,mesa_id,product_name,price,category,qty,created_by) VALUES(?,?,?,?,?,1,?)')->execute([$nid,$mesa_id,$name,$price,$cat,$_SESSION['role']]);out(['ok'=>true,'id'=>$nid]);}
@@ -235,6 +236,7 @@ if($action==='update_order'){
     $s=$pdo->prepare("SELECT created_by,category,mesa_id FROM orders WHERE id=? AND status='open'");$s->execute([$id]);$order=$s->fetch();
     if(!$order)err('Pedido nao encontrado',404);
     if($_SESSION['role']==='parceiro'&&$order['category']!=='comida')err('Sem permissao',403);
+    if($_SESSION['role']==='dono'&&$order['category']!=='bebida')err('Sem permissao',403);
     if($qty<=0)$pdo->prepare('DELETE FROM orders WHERE id=?')->execute([$id]);
     else{if($qty>999)err('Qtd invalida');$pdo->prepare('UPDATE orders SET qty=? WHERE id=?')->execute([$qty,$id]);}
     out(['ok'=>true]);

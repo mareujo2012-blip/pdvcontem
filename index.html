@@ -1043,7 +1043,7 @@ function renderOrders(){
   document.getElementById('mesa-sub').textContent=vis.length>0?`${vis.reduce((s,x)=>s+parseInt(x.qty),0)} itens`:(isN?'Mesa vazia':'Cliente sem pedidos');
   const list=document.getElementById('orders-list');
   if(!vis.length){list.innerHTML=`<div class="empty"><span class="empty-icon">${d?I.beer:I.plate}</span><div class="empty-text">Mesa sem pedidos</div><div class="empty-sub">Toque no cardápio para lançar itens</div></div>`;}
-  else{list.innerHTML=vis.map(item=>{const ce=d||item.category==='comida';return `<div class="order-item"><div class="oi-info"><div class="oi-name">${item.product_name}</div><div class="oi-sub"><div class="oi-price">${fmt(parseFloat(item.price)*parseInt(item.qty))}</div><span class="oi-cat ${item.category==='bebida'?'b':'c'}">${item.category}</span></div></div><div class="oi-ctrl">${ce?`<button class="qbtn" onclick="chqty('${item.id}',${parseInt(item.qty)-1})">${I.minus}</button><span class="qval">${item.qty}</span><button class="qbtn" onclick="chqty('${item.id}',${parseInt(item.qty)+1})">${I.plus}</button><button class="delbtn" onclick="chqty('${item.id}',0)">${I.cross}</button>`:`<span class="qval">${item.qty}</span>`}</div></div>`;}).join('');}
+  else{list.innerHTML=vis.map(item=>{const ce=S.role==='master'||(S.role==='dono'&&item.category==='bebida')||(S.role==='parceiro'&&item.category==='comida');return `<div class="order-item"><div class="oi-info"><div class="oi-name">${item.product_name}</div><div class="oi-sub"><div class="oi-price">${fmt(parseFloat(item.price)*parseInt(item.qty))}</div><span class="oi-cat ${item.category==='bebida'?'b':'c'}">${item.category}</span></div></div><div class="oi-ctrl">${ce?`<button class="qbtn" onclick="chqty('${item.id}',${parseInt(item.qty)-1})">${I.minus}</button><span class="qval">${item.qty}</span><button class="qbtn" onclick="chqty('${item.id}',${parseInt(item.qty)+1})">${I.plus}</button><button class="delbtn" onclick="chqty('${item.id}',0)">${I.cross}</button>`:`<span class="qval">${item.qty}</span>`}</div></div>`;}).join('');}
   const tb=document.getElementById('totals-bar');
   if(d){const cm=tC*S.commRate/100;tb.innerHTML=`<div class="totals-row"><div class="titem"><div class="tlbl">Bebidas</div><div class="tval bv">${fmt(tB)}</div></div><div class="titem"><div class="tlbl">Comida</div><div class="tval cv">${fmt(tC)}</div></div><div class="titem"><div class="tlbl">Comissão</div><div class="tval gv">${fmt(cm)}</div></div><div style="flex:1"></div><div class="titem" style="text-align:right"><div class="tlbl">Total</div><div class="tval mv">${fmt(tB+tC)}</div></div></div>`;}
   else{tb.innerHTML=`<div class="totals-row"><div class="titem"><div class="tlbl">Meus itens</div><div class="tval cv">${fmt(tC)}</div></div></div>`;}
@@ -1058,12 +1058,12 @@ function renderMenuPanels(){
 }
 function buildMenuHTML(isDono){
   let h='';
-  if(isDono){h+=mkMenuSec('bev','◆ Bebidas',S.products.bebida,'bebida');h+=`<div class="menu-divider"></div>`;h+=mkMenuSec('food','● Comida (parceiro)',S.products.comida,'comida');}
-  else h+=mkMenuSec('food','● Meu Cardápio',S.products.comida,'comida');
+  if(isDono){h+=mkMenuSec('bev','◆ Bebidas',S.products.bebida,'bebida',S.role==='master'||S.role==='dono');h+=`<div class="menu-divider"></div>`;h+=mkMenuSec('food','● Comida (parceiro)',S.products.comida,'comida',S.role==='master');}
+  else h+=mkMenuSec('food','● Meu Cardápio',S.products.comida,'comida',true);
   return h;
 }
-function mkMenuSec(cls,title,items,cat){
-  const tiles=items.length?items.map(it=>`<div class="menu-tile" onclick='addItem(${JSON.stringify(it.name)},${it.price},"${cat}")'><div class="menu-tile-name">${it.name}</div><div class="menu-tile-price">${fmt(parseFloat(it.price))}</div></div>`).join(''):`<div style="padding:12px;color:var(--mu);font-size:12px;text-align:center">Nenhum produto cadastrado</div>`;
+function mkMenuSec(cls,title,items,cat,canAdd=true){
+  const tiles=items.length?items.map(it=>`<div class="menu-tile${canAdd?'':' ro'}" ${canAdd?`onclick='addItem(${JSON.stringify(it.name)},${it.price},"${cat}")'`:'title="Sem permissão para adicionar"'}> <div class="menu-tile-name">${it.name}</div><div class="menu-tile-price">${fmt(parseFloat(it.price))}</div></div>`).join(''):`<div style="padding:12px;color:var(--mu);font-size:12px;text-align:center">Nenhum produto cadastrado</div>`;
   return `<div class="menu-sec"><div class="menu-sec-title ${cls}">${title}</div><div class="menu-grid">${tiles}</div></div>`;
 }
 async function addItem(name,price,cat){
