@@ -335,7 +335,9 @@ if($action==='master_reset_password'){
     need_auth();if(!is_master())err('Sem permissao',403);
     check_brute_action($pdo,'master_reset',5,15);
     $target=$body['role']??'';$new=$body['new']??'';$confirm=$body['confirm']??'';
-    if(!in_array($target,['dono','parceiro','master']))err('Role invalido');if(strlen($new)<6)err('Senha curta');if($new!==$confirm)err('Nao coincidem');if(!pass_ok($new))err('Senha fraca');
+    if(!in_array($target,['dono','parceiro','master']))err('Role invalido');
+    if($target==='master')err('A senha Master só pode ser alterada diretamente no arquivo config.php por extrema segurança.');
+    if(strlen($new)<6)err('Senha curta');if($new!==$confirm)err('Nao coincidem');if(!pass_ok($new))err('Senha fraca');
     $pdo->prepare('UPDATE users SET password_hash=?,pass_changed_at=NOW() WHERE role=?')->execute([password_hash($new,PASSWORD_BCRYPT,['cost'=>12]),$target]);
     add_audit($pdo,"Master redefiniu senha do perfil: $target",'master');
     clear_attempts($pdo,'master_reset');out(['ok'=>true]);
@@ -442,16 +444,16 @@ if($action==='upload_logo'){
 }
 if($action==='clear_closings'){
     if(!is_master())err('Sem permissao',403);
-    $pass=$body['pass']??'';$s=$pdo->prepare("SELECT password_hash FROM users WHERE role='master'");$s->execute();$hash=$s->fetchColumn();
-    if(!$hash||!password_verify($pass,$hash))err('Senha Master incorreta',403);
+    $pass=$body['pass']??'';
+    if(!defined('MASTER_PASSWORD')||$pass!==MASTER_PASSWORD)err('Senha Master incorreta',403);
     $cnt=$pdo->query('SELECT COUNT(*) as cnt FROM closings')->fetch()['cnt'];
     $pdo->exec('DELETE FROM closings');add_audit($pdo,"Fechamentos ativos excluidos ($cnt registros)",'master');out(['ok'=>true]);
 }
 if($action==='purge_archive'){
     if(!is_master())err('Sem permissao',403);$all=(bool)($body['all']??false);
     if($all){
-        $pass=$body['pass']??'';$s=$pdo->prepare("SELECT password_hash FROM users WHERE role='master'");$s->execute();$hash=$s->fetchColumn();
-        if(!$hash||!password_verify($pass,$hash))err('Senha Master incorreta',403);
+        $pass=$body['pass']??'';
+        if(!defined('MASTER_PASSWORD')||$pass!==MASTER_PASSWORD)err('Senha Master incorreta',403);
         $cnt=$pdo->query('SELECT COUNT(*) as cnt FROM closings_archive')->fetch()['cnt'];$pdo->exec('DELETE FROM closings_archive');add_audit($pdo,"Todo arquivo historico excluido ($cnt registros)",'master');
     }
     else{$bid=trim($body['id']??'');if(!preg_match('/^[a-f0-9]{32}$/',$bid))err('ID invalido');$cnt=$pdo->prepare('SELECT COUNT(*) as cnt FROM closings_archive WHERE backup_id=?');$cnt->execute([$bid]);$cnt=$cnt->fetch()['cnt'];$pdo->prepare('DELETE FROM closings_archive WHERE backup_id=?')->execute([$bid]);add_audit($pdo,"Dados historicos do backup $bid excluidos ($cnt registros)",'master');}
