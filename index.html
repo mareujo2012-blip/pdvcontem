@@ -276,8 +276,15 @@ input,select,textarea,button{font-family:inherit;}
 .comm-inp{width:52px;background:var(--bg);border:1.5px solid var(--bd);color:var(--am);font-family:var(--mono);font-size:16px;padding:5px 7px;border-radius:7px;text-align:center;outline:none;-webkit-appearance:none;appearance:none;}
 
 /* Report cards grid */
-.rpt-cards{padding:12px 14px 0;}
-.rpt-cards-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.rpt-kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 14px 0;}
+.rpt-kpi{background:var(--s1);border:1.5px solid var(--bd);border-radius:12px;padding:14px;position:relative;overflow:hidden;}
+.rpt-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kpi-accent,var(--am));}
+.rpt-kpi-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--mu);margin-bottom:6px;}
+.rpt-kpi-val{font-weight:700;font-size:22px;font-family:var(--mono);line-height:1;}
+.rpt-kpi-sub{font-size:11px;color:var(--mu);margin-top:5px;}
+/* Card aliases for backward compat */
+.rpt-cards{padding:0;}
+.rpt-cards-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 14px 0;}
 .rpt-card{background:var(--s1);border:1.5px solid var(--bd);border-radius:10px;padding:12px;}
 .rpt-card-label{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--mu);margin-bottom:4px;}
 .rpt-card-val{font-weight:700;font-size:19px;font-family:var(--mono);}
@@ -292,6 +299,19 @@ input,select,textarea,button{font-family:inherit;}
 .sh-sub{font-size:11px;color:var(--mu);margin-top:3px;}
 .sh-badge{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:500;margin-top:6px;}
 
+/* Category bar (distribuidora vs parceiro) */
+.rpt-dist-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px;margin-top:8px;}
+.rpt-dist-card{background:var(--s1);border:1.5px solid var(--bd);border-radius:12px;padding:14px;}
+.rdc-label{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--mu);margin-bottom:3px;}
+.rdc-name{font-weight:700;font-size:13px;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rdc-val{font-weight:800;font-size:23px;font-family:var(--mono);line-height:1.1;}
+.rdc-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:500;margin-top:6px;}
+/* Charts */
+.rpt-chart-wrap{background:var(--s1);border:1.5px solid var(--bd);border-radius:12px;margin:8px 14px 0;padding:14px;}
+.rpt-chart-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--mu);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.rpt-chart-legend{display:flex;gap:12px;}
+.rcl-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--mu);}
+.rcl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 /* Day cards */
 .rpt-sec-title{padding:14px 14px 6px;font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--mu);}
 .day-card{background:var(--s1);border:1.5px solid var(--bd);border-radius:11px;margin:0 14px 9px;overflow:hidden;}
@@ -1176,6 +1196,134 @@ async function loadReport(){
   }catch(e){body.innerHTML=`<div class="rpt-empty">Erro ao carregar relatório.</div>`;}
 }
 
+// ── RELATÓRIO: Funções de Renderização ───────────────────────
+
+function _buildKpiGrid(tB,tC,cm,tot,rep,count){
+  const tick=count?fmt(tot/count):fmt(0);
+  return `<div class="rpt-kpi-grid">
+    <div class="rpt-kpi" style="--kpi-accent:var(--am)">
+      <div class="rpt-kpi-lbl">Total Geral</div>
+      <div class="rpt-kpi-val" style="color:var(--am)">${fmt(tot)}</div>
+      <div class="rpt-kpi-sub">${count} mesa${count===1?'':'s'} fechada${count===1?'':'s'}</div>
+    </div>
+    <div class="rpt-kpi" style="--kpi-accent:var(--bl)">
+      <div class="rpt-kpi-lbl">◆ Bebidas</div>
+      <div class="rpt-kpi-val" style="color:var(--bl)">${fmt(tB)}</div>
+      <div class="rpt-kpi-sub">${tot>0?Math.round(tB/tot*100):0}% do total</div>
+    </div>
+    <div class="rpt-kpi" style="--kpi-accent:var(--co)">
+      <div class="rpt-kpi-lbl">● Comida</div>
+      <div class="rpt-kpi-val" style="color:var(--co)">${fmt(tC)}</div>
+      <div class="rpt-kpi-sub">${tot>0?Math.round(tC/tot*100):0}% do total</div>
+    </div>
+    <div class="rpt-kpi" style="--kpi-accent:var(--gn)">
+      <div class="rpt-kpi-lbl">Comissão do Parceiro</div>
+      <div class="rpt-kpi-val" style="color:var(--gn)">${fmt(cm)}</div>
+      <div class="rpt-kpi-sub">Sobre ${S.commRate}% das comidas</div>
+    </div>
+    <div class="rpt-kpi" style="--kpi-accent:var(--pu)">
+      <div class="rpt-kpi-lbl">Ticket Médio / Mesa</div>
+      <div class="rpt-kpi-val">${tick}</div>
+      <div class="rpt-kpi-sub">por fechamento</div>
+    </div>
+    <div class="rpt-kpi" style="--kpi-accent:var(--am)">
+      <div class="rpt-kpi-lbl">Repasse ao Parceiro</div>
+      <div class="rpt-kpi-val" style="color:var(--mu)">${fmt(rep)}</div>
+      <div class="rpt-kpi-sub">Comida − Comissão</div>
+    </div>
+  </div>`;
+}
+
+function _buildDistCards(tB,tC,cm,rep){
+  return `<div class="rpt-dist-grid">
+    <div class="rpt-dist-card" style="border-color:var(--bl)">
+      <div class="rdc-label">◆ Distribuidora</div>
+      <div class="rdc-name">${S.cfg.nome_d||'Distribuidora'}</div>
+      <div class="rdc-val" style="color:var(--bl)">${fmt(tB+cm)}</div>
+      <div class="rdc-badge" style="background:var(--bl-bg);color:var(--bl)">Bebidas: ${fmt(tB)}</div>
+      <div class="rdc-badge" style="background:var(--am-bg);color:var(--am)">+Comiss: ${fmt(cm)}</div>
+    </div>
+    <div class="rpt-dist-card" style="border-color:var(--co)">
+      <div class="rdc-label">● Parceiro</div>
+      <div class="rdc-name">${S.cfg.nome_p||'Parceiro'}</div>
+      <div class="rdc-val" style="color:var(--co)">${fmt(tC)}</div>
+      <div class="rdc-badge" style="background:var(--gn-bg);color:var(--gn)">Repasse: ${fmt(rep)}</div>
+      <div class="rdc-badge" style="background:var(--co-bg);color:var(--co)">Comid: ${fmt(tC)}</div>
+    </div>
+  </div>`;
+}
+
+function _buildCharts(rows){
+  // Agrupar por data
+  const byDate={};
+  rows.forEach(r=>{
+    const d=r.closed_date;
+    if(!byDate[d])byDate[d]={b:0,c:0,n:0};
+    byDate[d].b+=parseFloat(r.total_bebida);
+    byDate[d].c+=parseFloat(r.total_comida);
+    byDate[d].n+=1;
+  });
+  const dates=Object.keys(byDate).sort();
+  return `<div class="rpt-chart-wrap">
+    <div class="rpt-chart-title">
+      <span>Vendas por Dia</span>
+      <div class="rpt-chart-legend">
+        <div class="rcl-item"><div class="rcl-dot" style="background:#4a9eff"></div> Bebidas</div>
+        <div class="rcl-item"><div class="rcl-dot" style="background:#e05a3a"></div> Comida</div>
+      </div>
+    </div>
+    <canvas id="rptBarChart" style="width:100%;height:${Math.min(dates.length*38+24,260)}px;display:block"></canvas>
+  </div>`;
+}
+
+function _drawBarChart(rows){
+  const canvas=document.getElementById('rptBarChart');if(!canvas)return;
+  const byDate={};
+  rows.forEach(r=>{
+    const d=r.closed_date;
+    if(!byDate[d])byDate[d]={b:0,c:0};
+    byDate[d].b+=parseFloat(r.total_bebida);
+    byDate[d].c+=parseFloat(r.total_comida);
+  });
+  const dates=Object.keys(byDate).sort();
+  if(!dates.length)return;
+  const maxVal=Math.max(...dates.map(d=>byDate[d].b+byDate[d].c),1);
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.offsetWidth;const H=Math.min(dates.length*38+24,260);
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  const rowH=38;const padL=24;const padR=8;const barH=14;const barY_off=(rowH-barH)/2;
+  ctx.font='10px -apple-system,system-ui,sans-serif';
+  const theme=document.documentElement.getAttribute('data-theme')||'dark';
+  const muColor=theme==='dark'?'#6b6a66':'#a0a0a0';
+  const gridColor=theme==='dark'?'rgba(255,255,255,.06)':'rgba(0,0,0,.06)';
+  // Grid lines
+  [.25,.5,.75,1].forEach(f=>{
+    const x=padL+(W-padL-padR)*f;
+    ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);
+    ctx.strokeStyle=gridColor;ctx.lineWidth=1;ctx.stroke();
+    ctx.fillStyle=muColor;ctx.textAlign='center';
+    const lbl=f===1?fmt(maxVal):`${Math.round(f*100)}%`;
+    ctx.fillText(fmt(maxVal*f).replace('R$ ',''),x,H-2);
+  });
+  dates.forEach((d,i)=>{
+    const y=i*rowH;
+    const tot=byDate[d].b+byDate[d].c;
+    const bW=(W-padL-padR)*(byDate[d].b/maxVal);
+    const cW=(W-padL-padR)*(byDate[d].c/maxVal);
+    const day=d.slice(8)+'/'+d.slice(5,7);
+    ctx.fillStyle=muColor;ctx.textAlign='right';ctx.font='9px -apple-system,system-ui,sans-serif';
+    ctx.fillText(day,padL-3,y+barY_off+barH-2);
+    const bxStart=padL;
+    if(byDate[d].b>0){ctx.fillStyle='#4a9eff';ctx.beginPath();ctx.roundRect(bxStart,y+barY_off,bW,barH/2,2);ctx.fill();}
+    if(byDate[d].c>0){ctx.fillStyle='#e05a3a';ctx.beginPath();ctx.roundRect(bxStart,y+barY_off+barH/2,cW,barH/2,2);ctx.fill();}
+    ctx.fillStyle=muColor;ctx.textAlign='left';ctx.font='bold 10px -apple-system,system-ui,sans-serif';
+    const xEnd=padL+Math.max(bW,cW)+5;
+    ctx.fillText(fmt(tot),xEnd,y+barY_off+barH-2);
+  });
+}
+
 function renderStandardReport(rows){
   const body=document.getElementById('rpt-body');
   const tB=rows.reduce((s,r)=>s+parseFloat(r.total_bebida),0);
@@ -1186,80 +1334,32 @@ function renderStandardReport(rows){
     <div class="comm-lbl"><strong>Comissão do Parceiro</strong><small>% sobre vendas de comida</small></div>
     <input class="comm-inp" type="number" id="cinp" value="${S.commRate}" min="0" max="100" inputmode="numeric" oninput="updateComm(this.value)"/>
     <span style="color:var(--mu)">%</span>
-  </div>
-  <div class="split-row">
-    <div class="split-half"><div class="sh-title">◆ Distribuidora</div><div class="sh-name">${S.cfg.nome_d||'Distribuidora'}</div><div class="sh-val" style="color:var(--bl)">${fmt(tB)}</div><div class="sh-sub">Total em bebidas</div><div class="sh-badge" style="background:var(--am-bg);color:var(--am)">+${fmt(cm)} comissão</div></div>
-    <div class="split-half"><div class="sh-title">● Parceiro</div><div class="sh-name">${S.cfg.nome_p||'Parceiro'}</div><div class="sh-val" style="color:var(--co)">${fmt(tC)}</div><div class="sh-sub">Total em comida</div><div class="sh-badge" style="background:var(--gn-bg);color:var(--gn)">Repasse: ${fmt(rep)}</div></div>
-  </div>
-  <div class="rpt-cards"><div class="rpt-cards-grid">
-    <div class="rpt-card"><div class="rpt-card-label">Total Geral</div><div class="rpt-card-val" style="color:var(--am)">${fmt(tot)}</div></div>
-    <div class="rpt-card"><div class="rpt-card-label">Comissão</div><div class="rpt-card-val" style="color:var(--gn)">${fmt(cm)}</div></div>
-    <div class="rpt-card"><div class="rpt-card-label">Mesas Fechadas</div><div class="rpt-card-val">${rows.length}</div></div>
-    <div class="rpt-card"><div class="rpt-card-label">Ticket Médio</div><div class="rpt-card-val" style="font-size:15px;font-family:var(--mono)">${rows.length?fmt(tot/rows.length):fmt(0)}</div></div>
-    <div class="rpt-card"><div class="rpt-card-label">Receita Distribuidora</div><div class="rpt-card-val" style="color:var(--bl);font-size:15px;font-family:var(--mono)">${fmt(tB+cm)}</div></div>
-    <div class="rpt-card"><div class="rpt-card-label">Repasse Parceiro</div><div class="rpt-card-val" style="color:var(--mu);font-size:15px;font-family:var(--mono)">${fmt(rep)}</div></div>
-  </div></div>
-  <div class="cfg-section" style="margin:12px 14px 0;padding:15px">
-    <div class="fl" style="margin-bottom:10px">Comparativo de Vendas</div>
-    <div style="height:220px;position:relative"><canvas id="rptChart"></canvas></div>
   </div>`;
+  html+=_buildKpiGrid(tB,tC,cm,tot,rep,rows.length);
+  html+=_buildDistCards(tB,tC,cm,rep);
+  if(rows.length)html+=_buildCharts(rows);
   html+=buildDayCards(rows);
   body.innerHTML=html;
-  setTimeout(()=>renderRptChart(tB,tC,cm),50);
+  if(rows.length)setTimeout(()=>_drawBarChart(rows),80);
 }
-function renderRptChart(b,c,cm){
-  const ctx=document.getElementById('rptChart');if(!ctx)return;
-  new Chart(ctx,{type:'doughnut',data:{labels:['Bebidas','Comida','Comissão'],datasets:[{data:[b,c-cm,cm],backgroundColor:['#4a9eff','#e05a3a','#4caf7d'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#8a8880',font:{size:11}}}}}});
-}
+
 function exportExcel(){
   const{start,end}=getRange();
   if(!_lastRows||!_lastRows.length){showToast('Sem dados para exportar','e');return;}
-  
-  if(typeof XLSX !== 'undefined'){
-    try {
-      const data=_lastRows.map(r=>({
-        "Data": r.closed_date || '',
-        "Hora": r.closed_time || '',
-        "Mesa": r.mesa_id || '',
-        "Bebidas": parseFloat(r.total_bebida||0),
-        "Comida": parseFloat(r.total_comida||0),
-        "Comissão": Math.round(parseFloat(r.total_comida||0)*S.commRate)/100,
-        "Geral": parseFloat(r.total_value||0)
-      }));
-      const worksheet = XLSX.utils.json_to_sheet(data);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Vendas");
-      XLSX.writeFile(workbook, `Relatorio_${start}_a_${end}.xlsx`);
-      showToast('Excel (.xlsx) gerado ✓','s');
-    } catch(e) {
-      console.error(e);
-      showToast('Erro ao gerar XLSX: '+e.message,'e');
-    }
-  } else {
-    // Fallback para CSV (nativo, sem biblioteca)
-    try {
+  if(typeof XLSX!=='undefined'){
+    try{
+      const data=_lastRows.map(r=>({'Data':r.closed_date||'','Hora':r.closed_time||'','Mesa':r.mesa_id||'','Bebidas':parseFloat(r.total_bebida||0),'Comida':parseFloat(r.total_comida||0),'Comissao':Math.round(parseFloat(r.total_comida||0)*S.commRate)/100,'Total':parseFloat(r.total_value||0)}));
+      const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Vendas');XLSX.writeFile(wb,`Relatorio_${start}_a_${end}.xlsx`);showToast('Excel (.xlsx) gerado ✓','s');
+    }catch(e){console.error(e);showToast('Erro ao gerar XLSX: '+e.message,'e');}
+  }else{
+    try{
       showToast('Biblioteca (.xlsx) bloqueada. Gerando CSV...','w');
-      let csv = "Data;Hora;Mesa;Bebidas;Comida;Comissao;Total\n";
-      _lastRows.forEach(r => {
-        const com = Math.round(parseFloat(r.total_comida||0)*S.commRate)/100;
-        csv += `${r.closed_date};${r.closed_time};${r.mesa_id};${parseFloat(r.total_bebida||0)};${parseFloat(r.total_comida||0)};${com};${parseFloat(r.total_value||0)}\n`;
-      });
-      const blob = new Blob(["\ufeff"+csv], {type: 'text/csv;charset=utf-8;'});
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `Relatorio_${start}_a_${end}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      showToast('Relatório CSV gerado ✓','s');
-    } catch(e) {
-       showToast('Falha crítica na exportação: '+e.message,'e');
-    }
+      let csv='Data;Hora;Mesa;Bebidas;Comida;Comissao;Total\n';
+      _lastRows.forEach(r=>{const com=Math.round(parseFloat(r.total_comida||0)*S.commRate)/100;csv+=`${r.closed_date};${r.closed_time};${r.mesa_id};${parseFloat(r.total_bebida||0)};${parseFloat(r.total_comida||0)};${com};${parseFloat(r.total_value||0)}\n`;});
+      const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`Relatorio_${start}_a_${end}.csv`;document.body.appendChild(a);a.click();document.body.removeChild(a);showToast('Relatório CSV gerado ✓','s');
+    }catch(e){showToast('Falha na exportação: '+e.message,'e');}
   }
 }
-
-
 
 let _lastRows=[];
 
@@ -1268,57 +1368,26 @@ function renderMasterReport(data,start,end){
   const body=document.getElementById('rpt-body');
   const rows=data.rows;const s=data.summary;
   const f=S.masterFilter;
-  // Header cards baseados no filtro
-  let cards='';
   const cm2=parseFloat(s.total_comida)*S.commRate/100;
   const rep2=parseFloat(s.total_comida)-cm2;
-  if(f==='all'||f==='distribuidora'){
-    const distTotal=parseFloat(s.total_bebida)+cm2;
-    cards+=`
-    <div class="rpt-card" style="border-color:var(--bl)"><div class="rpt-card-label">◆ Distribuidora Total</div><div class="rpt-card-val" style="color:var(--bl)">${fmt(distTotal)}</div><div class="rpt-card-sub">Bebidas + Comissão</div></div>
-    <div class="rpt-card"><div class="rpt-card-label">◆ Bebidas</div><div class="rpt-card-val" style="color:var(--bl)">${fmt(parseFloat(s.total_bebida))}</div></div>`;
-  }
-  if(f==='all'||f==='parceiro'){
-    cards+=`
-    <div class="rpt-card" style="border-color:var(--co)"><div class="rpt-card-label">● Parceiro Total</div><div class="rpt-card-val" style="color:var(--co)">${fmt(parseFloat(s.total_comida))}</div><div class="rpt-card-sub">Total em comida</div></div>
-    <div class="rpt-card"><div class="rpt-card-label">● Repasse ao Parceiro</div><div class="rpt-card-val" style="color:var(--gn)">${fmt(rep2)}</div></div>`;
-  }
-  if(f==='all'||f==='comissao'){
-    cards+=`
-    <div class="rpt-card" style="border-color:var(--pu)"><div class="rpt-card-label">⬡ Comissão</div><div class="rpt-card-val" style="color:var(--pu)">${fmt(cm2)}</div><div class="rpt-card-sub">${S.commRate}% sobre comida</div></div>`;
-  }
-  if(f==='all'){
-    cards+=`
-    <div class="rpt-card"><div class="rpt-card-label">Total Geral</div><div class="rpt-card-val" style="color:var(--am)">${fmt(parseFloat(s.total_geral))}</div></div>
-    <div class="rpt-card"><div class="rpt-card-label">Mesas Fechadas</div><div class="rpt-card-val">${rows.length}</div></div>
-    <div class="rpt-card"><div class="rpt-card-label">Ticket Médio</div><div class="rpt-card-val" style="font-size:15px;font-family:var(--mono)">${rows.length?fmt(parseFloat(s.total_geral)/rows.length):fmt(0)}</div></div>`;
-  }
-
+  const tB=parseFloat(s.total_bebida),tC=parseFloat(s.total_comida),tot=parseFloat(s.total_geral);
+  const hasArchive=rows.some(r=>r.source==='archive');
   let html=`
   <div class="comm-row">
     <div class="comm-lbl"><strong>Comissão do Parceiro</strong><small>% sobre vendas de comida</small></div>
     <input class="comm-inp" type="number" id="cinp" value="${S.commRate}" min="0" max="100" inputmode="numeric" oninput="updateComm(this.value)"/>
     <span style="color:var(--mu)">%</span>
   </div>`;
-
-  // Split card apenas na visão "all"
-  if(f==='all'){
-    html+=`<div class="split-row">
-      <div class="split-half"><div class="sh-title">◆ Distribuidora</div><div class="sh-name">${S.cfg.nome_d||'Distribuidora'}</div><div class="sh-val" style="color:var(--bl)">${fmt(parseFloat(s.total_bebida))}</div><div class="sh-sub">Bebidas</div><div class="sh-badge" style="background:var(--am-bg);color:var(--am)">+${fmt(cm2)} comissão</div></div>
-      <div class="split-half"><div class="sh-title">● Parceiro</div><div class="sh-name">${S.cfg.nome_p||'Parceiro'}</div><div class="sh-val" style="color:var(--co)">${fmt(parseFloat(s.total_comida))}</div><div class="sh-sub">Comida</div><div class="sh-badge" style="background:var(--gn-bg);color:var(--gn)">Repasse: ${fmt(rep2)}</div></div>
-    </div>`;
-  }
-
-  html+=`<div class="rpt-cards"><div class="rpt-cards-grid">${cards}</div></div>`;
-
-  // Archive notice se houver dados arquivados
-  const hasArchive=rows.some(r=>r.source==='archive');
-  if(hasArchive)html+=`<div style="margin:10px 14px 0;padding:9px 13px;background:var(--pu-bg);border:1.5px solid var(--pu);border-radius:8px;font-size:12px;color:var(--pu)">⬡ Este relatório inclui dados do arquivo histórico (backups).</div>`;
-
+  html+=_buildKpiGrid(tB,tC,cm2,tot,rep2,rows.length);
+  if(f==='all'||f==='distribuidora'||f==='parceiro')
+    html+=_buildDistCards(tB,tC,cm2,rep2);
+  if(rows.length)html+=_buildCharts(rows);
+  if(hasArchive)html+=`<div style="margin:8px 14px 0;padding:9px 13px;background:var(--pu-bg);border:1.5px solid var(--pu);border-radius:8px;font-size:12px;color:var(--pu)">⬡ Este relatório inclui dados do arquivo histórico (backups).</div>`;
   html+=buildDayCards(rows,f);
   body.innerHTML=html;
-  setTimeout(()=>renderRptChart(parseFloat(s.total_bebida),parseFloat(s.total_comida),cm2),50);
+  if(rows.length)setTimeout(()=>_drawBarChart(rows),80);
 }
+
 
 
 function buildDayCards(rows,filter='all'){
