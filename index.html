@@ -142,13 +142,13 @@ input,select,textarea,button{font-family:inherit;}
 .dtab.active .dti{opacity:1;}
 
 /* ── VIEWS ── */
-.views-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;}
-.view{display:none;flex:1;overflow:hidden;flex-direction:column;}
+.views-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;min-width:0;}
+.view{display:none;flex:1;overflow:hidden;flex-direction:column;min-height:0;min-width:0;}
 .view.active{display:flex;}
-.view-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.view-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;}
 
 /* ── PDV LAYOUT ── */
-.pdv-layout{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.pdv-layout{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;min-width:0;}
 
 /* Mesa strip — mobile */
 .mesa-strip{background:var(--s1);border-bottom:1px solid var(--bd);padding:10px 12px;flex-shrink:0;display:flex;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
@@ -161,7 +161,7 @@ input,select,textarea,button{font-family:inherit;}
 .mchip.act.has{color:#fff;}
 
 /* PDV inner */
-.pdv-inner{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.pdv-inner{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;min-width:0;}
 .pdv-header{padding:11px 15px;background:var(--s1);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px;}
 .pdv-title{font-weight:700;font-size:17px;}
 .pdv-sub{font-size:11px;color:var(--mu);margin-top:2px;}
@@ -171,8 +171,8 @@ input,select,textarea,button{font-family:inherit;}
 .pdv-itabs{display:flex;border-bottom:1px solid var(--bd);background:var(--s1);flex-shrink:0;}
 .pdv-itab{flex:1;padding:10px 6px;text-align:center;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);border-bottom:2.5px solid transparent;cursor:pointer;font-weight:500;}
 .pdv-itab.active{color:var(--am);border-bottom-color:var(--am);}
-.pdv-itab-body{flex:1;overflow:hidden;display:flex;}
-.pdv-itab-pane{flex:1;overflow-y:auto;display:none;-webkit-overflow-scrolling:touch;}
+.pdv-itab-body{flex:1;overflow:hidden;display:flex;min-height:0;min-width:0;}
+.pdv-itab-pane{flex:1;overflow-y:auto;display:none;-webkit-overflow-scrolling:touch;min-height:0;min-width:0;}
 .pdv-itab-pane.active{display:block;}
 
 /* Orders as cards */
@@ -438,6 +438,8 @@ input,select,textarea,button{font-family:inherit;}
   .mob-nav{display:none;}
   .desk-tabs{display:flex;padding-left:max(14px, calc((100% - 1400px)/2));}
   #app{margin:0 auto;width:100%;max-width:clamp(800px, 94vw, 1400px);box-shadow:0 0 40px rgba(0,0,0,.3);height:100%;height:100dvh;position:relative;border-left:1px solid var(--bd);border-right:1px solid var(--bd);}
+  .views-wrap{min-width:0;min-height:0;}
+  .view{min-width:0;min-height:0;}
   .view.active{display:flex;}
   .view-scroll{flex:1;overflow-y:auto;}
 
