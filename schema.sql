@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS `closings_archive` (
   `backup_id` char(32) NOT NULL,
   `mesa_id` varchar(20) NOT NULL,
   `total_bebida` decimal(10,2) DEFAULT 0.00,
-  `total_comida` decimal(10,2) DEFAULT 0.00,
+  `total_comida collection_rate` decimal(10,2) DEFAULT 0.00,
   `commission_rate` decimal(5,2) DEFAULT 0.00,
   `commission_value` decimal(10,2) DEFAULT 0.00,
   `total_value` decimal(10,2) DEFAULT 0.01,
@@ -143,9 +143,9 @@ CREATE TABLE IF NOT EXISTS `users` (
   PRIMARY KEY (`role`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Usuários iniciais (Senhas padrão: dono / parceiro)
+-- Usuários iniciais (A senha é "senha123" para ambos)
 INSERT IGNORE INTO `users` (`role`, `name`, `password_hash`, `pass_changed_at`) VALUES
-('dono', 'Proprietário', password_hash('dono', PASSWORD_BCRYPT), NOW()),
-('parceiro', 'Cozinha/Parceiro', password_hash('parceiro', PASSWORD_BCRYPT), NOW());
+('dono', 'Proprietário', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', NOW()),
+('parceiro', 'Cozinha/Parceiro', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', NOW());
 
 COMMIT;
